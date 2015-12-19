@@ -7,6 +7,8 @@ import nl.thijsmolendijk.ibex.ast.expr.CallExpr;
 import nl.thijsmolendijk.ibex.ast.expr.Identifier;
 import nl.thijsmolendijk.ibex.ast.expr.SequenceExpr;
 import nl.thijsmolendijk.ibex.ast.expr.UnresolvedDotExpr;
+import nl.thijsmolendijk.ibex.type.TupleType;
+import nl.thijsmolendijk.ibex.type.Type;
 import nl.thijsmolendijk.ibex.util.Pair;
 
 import java.util.ArrayList;
@@ -158,6 +160,78 @@ public class Parser {
         parseToken(TokenType.RPAREN, "expected ')' in parenthesis expression", loc, "to match this opening '('");
 
         return sem.handleTupleExpr(loc, exprs, rightLoc);
+    }
+
+    /**
+     * @return the parsed type
+     */
+    public Type parseType() {
+        Type result;
+        switch (token.getKind()) {
+            case IDENTIFIER:
+                result = sem.handleTypeName(token.getLocation(), context.getIdentifier(token.getText()));
+                consumeToken();
+                break;
+            case LPAREN:
+                SourceLocation leftLoc = consumeToken();
+                result = parseTupleType(leftLoc);
+                parseToken(TokenType.RPAREN, "expected ')' at end of tuple type", leftLoc, "to match this opening '('");
+                break;
+            default:
+                errorAndExit(token.getLocation(), "expected type here");
+                return null;
+        }
+
+        assert result != null;
+
+        while (true) {
+            SourceLocation tokLoc = token.getLocation();
+            if (consumeIf(TokenType.ARROW)) {
+                Type secondHalf = parseType();
+                if (secondHalf == null) return null;
+                result = sem.handleFunctionType(result, tokLoc, secondHalf);
+
+                continue;
+            }
+
+            if (consumeIf(TokenType.LBRACKET)) {
+                Expression size = null;
+                if (token.isNot(TokenType.RBRACKET)) {
+                    size = parseExpr();
+                }
+
+                parseToken(TokenType.RBRACKET, "expected ']' in array type", tokLoc, "to match this opening '['");
+
+                result = sem.handleArrayType(result, size);
+                continue;
+            }
+
+            break;
+        }
+
+        return result;
+    }
+
+    /**
+     * @return the parsed tuple type
+     */
+    public Type parseTupleType(SourceLocation leftLoc) {
+        List<TupleType.TupleElement> elements = new ArrayList<>();
+        if (token.isNot(TokenType.RPAREN)) {
+            do {
+                Identifier name = null;
+                if (token.is(TokenType.IDENTIFIER) && lexer.peekToken().is(TokenType.COLON)) {
+                    name = parseIdentifier();
+                    parseToken(TokenType.COLON, "expected colon after identifier");
+                }
+
+                Type type = parseType();
+                elements.add(new TupleType.TupleElement(name, type));
+            } while (consumeIf(TokenType.COMMA));
+        }
+
+        SourceLocation rightLoc = token.getLocation();
+        return sem.handleTupleType(leftLoc, elements, rightLoc);
     }
 
     /**
