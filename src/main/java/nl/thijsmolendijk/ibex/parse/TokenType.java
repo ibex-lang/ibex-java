@@ -6,6 +6,8 @@ package nl.thijsmolendijk.ibex.parse;
  * Created by molenzwiebel on 19-12-15.
  */
 public enum TokenType {
+    // Signals unknown token.
+    UNKNOWN,
     // Signals End-Of-File.
     EOF,
     // Integer literal
@@ -17,7 +19,6 @@ public enum TokenType {
     LPAREN,
     // ')'
     RPAREN,
-
     // ':'
     COLON,
     // '::'
@@ -34,6 +35,8 @@ public enum TokenType {
     LBRACE,
     // '}'
     RBRACE,
+    // '='
+    EQUAL,
 
     // Any operator consisting of [/=-+*%<>!&|^]*
     OPERATOR,
