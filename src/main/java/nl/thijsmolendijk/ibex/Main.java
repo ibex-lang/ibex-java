@@ -8,7 +8,7 @@ import nl.thijsmolendijk.ibex.parse.Parser;
  */
 public class Main {
     public static void main(String... args) {
-        Parser p = new Parser("foo.en", "{ fn bar a: Foo, b: Bar) { 1 } }", new ASTContext());
+        Parser p = new Parser("foo.en", "{ type Foo : (a: Int1, b: Int8) }", new ASTContext());
         BraceStmt stmt = p.parseBraceStmt();
         System.out.println(stmt);
     }

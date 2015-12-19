@@ -77,9 +77,6 @@ public class Semantic {
     }
 
     public ArrayType handleArrayType(Type element, Expression size) {
-        if (size != null && !(size instanceof IntegerLiteralExpr)) {
-            throw new RuntimeException("No literal array size"); //FIXME: Pretty error.
-        }
         return ArrayType.create(element, size == null ? 0 : Integer.parseInt(((IntegerLiteralExpr) size).getVal()), context);
     }
 
@@ -96,12 +93,14 @@ public class Semantic {
     }
 
     public VarDecl handleVarDecl(SourceLocation loc, Identifier name, Type givenType, Expression init) {
-        //FIXME: Dependent type if givenType == null
+        if (givenType == null) {
+            givenType = context.getDependentType();
+        }
         return new VarDecl(name, givenType, init, loc);
     }
 
     public TypeDecl handleTypeDecl(SourceLocation loc, Identifier name, Type ty) {
-        //FIXME: Resolve if needed.
+        //FIXME: Mark as resolved if needed.
         return new TypeDecl(name, loc, ty);
     }
 }

@@ -26,6 +26,7 @@ public class ASTContext {
     private final BuiltinType int64;
 
     private final TupleType unit;
+    private final DependentType dependentType;
 
     public ASTContext() {
         this.identifiers = new HashMap<>();
@@ -40,6 +41,7 @@ public class ASTContext {
         this.int64 = new BuiltinType(BuiltinType.BuiltinKind.INT64);
 
         this.unit = TupleType.get(new TupleType.TupleElement[0], this);
+        this.dependentType = new DependentType();
     }
 
     public Identifier getIdentifier(String text) {
@@ -84,5 +86,9 @@ public class ASTContext {
 
     public TupleType getUnit() {
         return unit;
+    }
+
+    public DependentType getDependentType() {
+        return dependentType;
     }
 }

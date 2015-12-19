@@ -366,6 +366,10 @@ public class Parser {
                     size = parseExpr();
                 }
 
+                if (size != null && !(size instanceof IntegerLiteralExpr)) {
+                    errorAndExit(size.getLocation(), "expected size constant here");
+                }
+
                 parseToken(TokenType.RBRACKET, "expected ']' in array type", tokLoc, "to match this opening '['");
 
                 result = sem.handleArrayType(result, size);
