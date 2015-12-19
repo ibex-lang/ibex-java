@@ -18,7 +18,8 @@ public class Lexer {
             new Object[]{"type", KW_TYPE},
             new Object[]{"as", KW_AS},
             new Object[]{"extern", KW_EXTERN},
-            new Object[]{"let", KW_LET}
+            new Object[]{"let", KW_LET},
+            new Object[]{"return", KW_RETURN}
     };
 
     private String filename;

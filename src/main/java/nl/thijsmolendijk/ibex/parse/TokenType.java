@@ -64,5 +64,7 @@ public enum TokenType {
     // 'extern'
     KW_EXTERN,
     // 'let'
-    KW_LET;
+    KW_LET,
+    // 'return'
+    KW_RETURN;
 }

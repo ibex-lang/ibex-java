@@ -3,10 +3,11 @@ package nl.thijsmolendijk.ibex.parse;
 import nl.thijsmolendijk.ibex.ASTContext;
 import nl.thijsmolendijk.ibex.Semantic;
 import nl.thijsmolendijk.ibex.ast.Expression;
-import nl.thijsmolendijk.ibex.ast.expr.CallExpr;
-import nl.thijsmolendijk.ibex.ast.expr.Identifier;
-import nl.thijsmolendijk.ibex.ast.expr.SequenceExpr;
-import nl.thijsmolendijk.ibex.ast.expr.UnresolvedDotExpr;
+import nl.thijsmolendijk.ibex.ast.Node;
+import nl.thijsmolendijk.ibex.ast.Statement;
+import nl.thijsmolendijk.ibex.ast.expr.*;
+import nl.thijsmolendijk.ibex.ast.stmt.*;
+import nl.thijsmolendijk.ibex.type.FunctionType;
 import nl.thijsmolendijk.ibex.type.TupleType;
 import nl.thijsmolendijk.ibex.type.Type;
 import nl.thijsmolendijk.ibex.util.Pair;
@@ -32,6 +33,171 @@ public class Parser {
 
         this.lexer = new Lexer(filename, source);
         this.token = lexer.lex();
+    }
+
+    /**
+     * Parses a list of nodes in between '{' and '}' such that '{' node* '}'.
+     */
+    private List<Node> parseBrace() {
+        List<Node> ret = new ArrayList<>();
+
+        while (token.isNot(TokenType.RBRACE) && token.isNot(TokenType.EOF)) {
+            switch (token.getKind()) {
+                case LBRACE:
+                case KW_RETURN:
+                case KW_IF:
+                    Statement stmt = parseStatement();
+                    ret.add(stmt);
+                    break;
+                case KW_LET:
+                    ret.add(parseVarDecl());
+                    break;
+                case KW_TYPE:
+                    ret.add(parseTypeDecl());
+                    break;
+                case KW_FN:
+                    ret.add(parseFnDecl());
+                    break;
+                default: {
+                    Expression ex = parseExpr();
+
+                    if (token.isNot(TokenType.EQUAL)) {
+                        ret.add(ex);
+                        break;
+                    }
+
+                    SourceLocation eqLoc = consumeToken();
+                    Expression right = parseExpr();
+                    if (right == null) return null;
+
+                    ret.add(new AssignExpr(ex, eqLoc, right));
+                }
+            }
+        }
+
+        return ret;
+    }
+
+    /**
+     * @return the parsed var decl
+     */
+    public VarDecl parseVarDecl() {
+        SourceLocation varLoc = consumeToken();
+
+        String name = token.getText();
+        parseToken(TokenType.IDENTIFIER, "expected identifier here", varLoc, "due to the 'let' here");
+
+        Type givenType = null;
+        if (consumeIf(TokenType.COLON)) {
+            givenType = parseType();
+        }
+
+        Expression init = null;
+        if (consumeIf(TokenType.EQUAL)) {
+            init = parseExpr();
+        }
+
+        VarDecl result = sem.handleVarDecl(varLoc, context.getIdentifier(name), givenType, init);
+        sem.addToScope(result);
+        return result;
+    }
+
+    /**
+     * @return the parsed type decl
+     */
+    public TypeDecl parseTypeDecl() {
+        SourceLocation loc = consumeToken();
+
+        Identifier name = parseIdentifier();
+        parseToken(TokenType.COLON, "expected ':' in type declaration", loc, "due to the 'type' here");
+
+        Type type = parseType();
+
+        return sem.handleTypeDecl(loc, name, type);
+    }
+
+    /**
+     * @return the parsed function decl
+     */
+    public FnDecl parseFnDecl() {
+        SourceLocation start = consumeToken();
+
+        Identifier name = parseIdentifier();
+        if (token.isNot(TokenType.LPAREN)) {
+            errorAndExit(token.getLocation(), "expected '(' in function declaration");
+        }
+
+        Type funType = parseType();
+        if (!(funType instanceof FunctionType)) {
+            funType = sem.handleFunctionType(funType, null, context.getUnit());
+        }
+
+        FuncExpr ex = sem.handleFunc(start, (FunctionType) funType);
+        if (token.is(TokenType.LBRACE)) {
+            ex.setBody(parseBraceStmt());
+        }
+
+        FnDecl decl = new FnDecl(name, funType, ex, start);
+        sem.addToScope(decl);
+        return decl;
+    }
+
+    /**
+     * @return the parsed statement
+     */
+    public Statement parseStatement() {
+        switch (token.getKind()) {
+            default:
+                errorAndExit(token.getLocation(), "expected statement here");
+                return null;
+            case KW_RETURN: return parseReturnStmt();
+            case KW_IF: return parseIfStmt();
+        }
+    }
+
+    /**
+     * @return the parsed brace statement
+     */
+    public BraceStmt parseBraceStmt() {
+        if (token.isNot(TokenType.LBRACE)) {
+            errorAndExit(token.getLocation(), "expected '{' here");
+            return null;
+        }
+
+        SourceLocation start = consumeToken();
+        List<Node> res = parseBrace();
+
+        SourceLocation end = token.getLocation();
+        parseToken(TokenType.RBRACE, "expected '}' at end of brace expression", start, "to match this opening '{'");
+
+        return new BraceStmt(start, end, res.toArray(new Node[res.size()]));
+    }
+
+    /**
+     * @return the parsed return statement
+     */
+    public Statement parseReturnStmt() {
+        SourceLocation loc = consumeToken();
+
+        Expression val = isStartOfExpr(token) ? parseExpr() : new TupleExpr(loc, loc, new Expression[0], new Identifier[0]);
+        return new ReturnStmt(loc, val);
+    }
+
+    /**
+     * @return the parsed if statement
+     */
+    public Statement parseIfStmt() {
+        SourceLocation ifLoc = consumeToken();
+        Expression condition = parseExpr();
+
+        Statement body = parseBraceStmt();
+
+        Statement elseBody = null;
+        if (consumeIf(TokenType.KW_ELSE)) {
+            elseBody = token.is(TokenType.KW_IF) ? parseIfStmt() : parseBraceStmt();
+        }
+
+        return new IfStmt(ifLoc, condition, body, elseBody);
     }
 
     /**
@@ -277,6 +443,13 @@ public class Parser {
         if (token.isNot(type)) return false;
         consumeToken();
         return true;
+    }
+
+    /**
+     * @return if the specified token signals the start of an expression
+     */
+    private boolean isStartOfExpr(Token next) {
+        return next.is(TokenType.INTEGER) || next.is(TokenType.LPAREN) || next.is(TokenType.IDENTIFIER) || next.is(TokenType.OPERATOR);
     }
 
     private void note(SourceLocation loc, String message) {

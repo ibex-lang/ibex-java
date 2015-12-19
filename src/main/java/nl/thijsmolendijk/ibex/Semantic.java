@@ -1,11 +1,11 @@
 package nl.thijsmolendijk.ibex;
 
 import nl.thijsmolendijk.ibex.ast.Expression;
-import nl.thijsmolendijk.ibex.ast.expr.Identifier;
-import nl.thijsmolendijk.ibex.ast.expr.IntegerLiteralExpr;
-import nl.thijsmolendijk.ibex.ast.expr.TupleExpr;
-import nl.thijsmolendijk.ibex.ast.expr.UnresolvedRefExpr;
+import nl.thijsmolendijk.ibex.ast.expr.*;
+import nl.thijsmolendijk.ibex.ast.stmt.ArgDecl;
+import nl.thijsmolendijk.ibex.ast.stmt.NamedDecl;
 import nl.thijsmolendijk.ibex.ast.stmt.TypeDecl;
+import nl.thijsmolendijk.ibex.ast.stmt.VarDecl;
 import nl.thijsmolendijk.ibex.parse.SourceLocation;
 import nl.thijsmolendijk.ibex.type.*;
 import nl.thijsmolendijk.ibex.util.Pair;
@@ -23,6 +23,10 @@ public class Semantic {
     public Semantic(ASTContext context) {
         this.context = context;
     }
+
+    /* ========================================================
+     *                      Expressions
+     * ======================================================== */
 
     public Expression handleIdentifier(SourceLocation loc, Identifier ident) {
         //FIXME: Actually perform lookup.
@@ -46,6 +50,23 @@ public class Semantic {
         return new TupleExpr(lbrace, rbrace, exprs, names);
     }
 
+    public FuncExpr handleFunc(SourceLocation start, FunctionType funType) {
+        //FIXME: Scope.
+        TupleType inArgs = (TupleType) funType.getIn();
+        ArgDecl[] args = new ArgDecl[inArgs.size()];
+
+        for (int i = 0; i < inArgs.size(); i++) {
+            TupleType.TupleElement el = inArgs.getElement(i);
+            args[i] = new ArgDecl(el.getName(), el.getType(), start);
+        }
+
+        return new FuncExpr(funType, start, args, null);
+    }
+
+    /* ========================================================
+     *                      Type Constructing
+     * ======================================================== */
+
     public Type handleTypeName(SourceLocation loc, Identifier name) {
         //FIXME: Perform lookup
         return new NameAliasType(new TypeDecl(name, loc, null));
@@ -64,5 +85,23 @@ public class Semantic {
 
     public TupleType handleTupleType(SourceLocation begin, List<TupleType.TupleElement> elements, SourceLocation end) {
         return TupleType.get(elements.toArray(new TupleType.TupleElement[elements.size()]), context);
+    }
+
+    /* ========================================================
+     *                      Decls and lookup
+     * ======================================================== */
+
+    public void addToScope(NamedDecl decl) {
+
+    }
+
+    public VarDecl handleVarDecl(SourceLocation loc, Identifier name, Type givenType, Expression init) {
+        //FIXME: Dependent type if givenType == null
+        return new VarDecl(name, givenType, init, loc);
+    }
+
+    public TypeDecl handleTypeDecl(SourceLocation loc, Identifier name, Type ty) {
+        //FIXME: Resolve if needed.
+        return new TypeDecl(name, loc, ty);
     }
 }
