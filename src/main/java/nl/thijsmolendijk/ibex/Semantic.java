@@ -1,0 +1,44 @@
+package nl.thijsmolendijk.ibex;
+
+import nl.thijsmolendijk.ibex.ast.Expression;
+import nl.thijsmolendijk.ibex.ast.expr.Identifier;
+import nl.thijsmolendijk.ibex.ast.expr.IntegerLiteralExpr;
+import nl.thijsmolendijk.ibex.ast.expr.TupleExpr;
+import nl.thijsmolendijk.ibex.ast.expr.UnresolvedRefExpr;
+import nl.thijsmolendijk.ibex.parse.SourceLocation;
+import nl.thijsmolendijk.ibex.util.Pair;
+
+import java.util.List;
+
+/**
+ * Created by molenzwiebel on 19-12-15.
+ */
+public class Semantic {
+    private ASTContext context;
+
+    public Semantic(ASTContext context) {
+        this.context = context;
+    }
+
+    public Expression handleIdentifier(SourceLocation loc, Identifier ident) {
+        //FIXME: Actually perform lookup.
+        return new UnresolvedRefExpr(loc, ident);
+    }
+
+    public IntegerLiteralExpr handleInteger(SourceLocation loc, String val) {
+        //FIXME: Integer type
+        return new IntegerLiteralExpr(loc, val);
+    }
+
+    public TupleExpr handleTupleExpr(SourceLocation lbrace, List<Pair<Expression, Identifier>> elements, SourceLocation rbrace) {
+        Expression[] exprs = new Expression[elements.size()];
+        Identifier[] names = new Identifier[elements.size()];
+
+        for (int i = 0; i < elements.size(); i++) {
+            exprs[i] = elements.get(i).getLeft();
+            names[i] = elements.get(i).getRight();
+        }
+
+        return new TupleExpr(lbrace, rbrace, exprs, names);
+    }
+}

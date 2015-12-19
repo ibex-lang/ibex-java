@@ -77,6 +77,7 @@ public class Lexer {
             case '{': return newToken(LBRACE, start);
             case '}': return newToken(RBRACE, start);
             case ',': return newToken(COMMA, start);
+            case '.': return newToken(DOT, start);
 
             case ':':
                 if (source.charAt(offset) != ':') return newToken(COLON, start);

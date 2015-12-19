@@ -37,6 +37,8 @@ public enum TokenType {
     RBRACE,
     // '='
     EQUAL,
+    // '.'
+    DOT,
 
     // Any operator consisting of [/=-+*%<>!&|^]*
     OPERATOR,

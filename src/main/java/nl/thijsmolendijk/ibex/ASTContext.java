@@ -1,10 +1,7 @@
 package nl.thijsmolendijk.ibex;
 
 import nl.thijsmolendijk.ibex.ast.expr.Identifier;
-import nl.thijsmolendijk.ibex.type.ArrayType;
-import nl.thijsmolendijk.ibex.type.FunctionType;
-import nl.thijsmolendijk.ibex.type.TupleType;
-import nl.thijsmolendijk.ibex.type.Type;
+import nl.thijsmolendijk.ibex.type.*;
 import nl.thijsmolendijk.ibex.util.Pair;
 
 import java.util.ArrayList;
@@ -22,11 +19,27 @@ public class ASTContext {
     private HashMap<Pair<Type, Type>, FunctionType> functionTypes;
     private HashMap<Pair<Type, Integer>, ArrayType> arrayTypes;
 
+    private final BuiltinType int1;
+    private final BuiltinType int8;
+    private final BuiltinType int16;
+    private final BuiltinType int32;
+    private final BuiltinType int64;
+
+    private final TupleType unit;
+
     public ASTContext() {
         this.identifiers = new HashMap<>();
         this.tupleTypes = new ArrayList<>();
         this.functionTypes = new HashMap<>();
         this.arrayTypes = new HashMap<>();
+
+        this.int1 = new BuiltinType(BuiltinType.BuiltinKind.INT1);
+        this.int8 = new BuiltinType(BuiltinType.BuiltinKind.INT8);
+        this.int16 = new BuiltinType(BuiltinType.BuiltinKind.INT16);
+        this.int32 = new BuiltinType(BuiltinType.BuiltinKind.INT32);
+        this.int64 = new BuiltinType(BuiltinType.BuiltinKind.INT64);
+
+        this.unit = TupleType.get(new TupleType.TupleElement[0], this);
     }
 
     public Identifier getIdentifier(String text) {
@@ -47,5 +60,29 @@ public class ASTContext {
 
     public HashMap<Pair<Type, Integer>, ArrayType> getArrayTypes() {
         return arrayTypes;
+    }
+
+    public BuiltinType getInt1() {
+        return int1;
+    }
+
+    public BuiltinType getInt8() {
+        return int8;
+    }
+
+    public BuiltinType getInt16() {
+        return int16;
+    }
+
+    public BuiltinType getInt32() {
+        return int32;
+    }
+
+    public BuiltinType getInt64() {
+        return int64;
+    }
+
+    public TupleType getUnit() {
+        return unit;
     }
 }
