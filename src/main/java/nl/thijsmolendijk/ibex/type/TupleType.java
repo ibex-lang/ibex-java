@@ -1,7 +1,7 @@
 package nl.thijsmolendijk.ibex.type;
 
 import nl.thijsmolendijk.ibex.ASTContext;
-import nl.thijsmolendijk.ibex.ast.Identifier;
+import nl.thijsmolendijk.ibex.ast.expr.Identifier;
 
 import java.util.ArrayList;
 import java.util.List;

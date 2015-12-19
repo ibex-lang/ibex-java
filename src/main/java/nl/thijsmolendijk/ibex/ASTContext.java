@@ -1,6 +1,6 @@
 package nl.thijsmolendijk.ibex;
 
-import nl.thijsmolendijk.ibex.ast.Identifier;
+import nl.thijsmolendijk.ibex.ast.expr.Identifier;
 import nl.thijsmolendijk.ibex.type.ArrayType;
 import nl.thijsmolendijk.ibex.type.FunctionType;
 import nl.thijsmolendijk.ibex.type.TupleType;

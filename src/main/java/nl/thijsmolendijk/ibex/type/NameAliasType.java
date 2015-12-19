@@ -1,7 +1,7 @@
 package nl.thijsmolendijk.ibex.type;
 
 import nl.thijsmolendijk.ibex.ASTContext;
-import nl.thijsmolendijk.ibex.ast.TypeDecl;
+import nl.thijsmolendijk.ibex.ast.stmt.TypeDecl;
 
 /**
  * Represents an 'aliased' type, as created with the type keyword.
