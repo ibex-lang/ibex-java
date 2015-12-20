@@ -37,6 +37,21 @@ public class Parser {
     }
 
     /**
+     * @return the parsed translation unit
+     */
+    public TranslationUnit parseTranslationUnit() {
+        TranslationUnit result = new TranslationUnit(context);
+        SourceLocation start = token.getLocation();
+
+        List<Node> contents = parseBrace();
+        SourceLocation end = token.getLocation();
+
+        sem.handleEndOfUnit(result, start, end, contents);
+
+        return result;
+    }
+
+    /**
      * Parses a list of nodes in between '{' and '}' such that '{' node* '}'.
      */
     private List<Node> parseBrace() {

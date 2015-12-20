@@ -1,15 +1,20 @@
 package nl.thijsmolendijk.ibex;
 
 import nl.thijsmolendijk.ibex.ast.Expression;
+import nl.thijsmolendijk.ibex.ast.Node;
 import nl.thijsmolendijk.ibex.ast.expr.*;
 import nl.thijsmolendijk.ibex.ast.stmt.*;
 import nl.thijsmolendijk.ibex.parse.SourceLocation;
 import nl.thijsmolendijk.ibex.scoping.Scope;
 import nl.thijsmolendijk.ibex.scoping.ScopedHashMap;
-import nl.thijsmolendijk.ibex.type.*;
+import nl.thijsmolendijk.ibex.type.ArrayType;
+import nl.thijsmolendijk.ibex.type.FunctionType;
+import nl.thijsmolendijk.ibex.type.TupleType;
+import nl.thijsmolendijk.ibex.type.Type;
 import nl.thijsmolendijk.ibex.util.Pair;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
 /**
@@ -72,6 +77,19 @@ public class Semantic {
         }
 
         return new FuncExpr(funType, start, args, null);
+    }
+
+    public void handleEndOfUnit(TranslationUnit result, SourceLocation start, SourceLocation end, List<Node> contents) {
+        result.setBody(new BraceStmt(start, end, contents.toArray(new Node[contents.size()])));
+
+        Iterator<TypeDecl> it = unresolvedTypes.iterator();
+        for (TypeDecl decl = it.next(); it.hasNext(); decl = it.next()) {
+            if (decl.getUnderlyingType() != null) {
+                it.remove();
+            }
+        }
+
+        result.setUnresolvedTypesAfterParsing(unresolvedTypes);
     }
 
     /* ========================================================
