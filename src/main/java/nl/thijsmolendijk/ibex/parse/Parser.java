@@ -7,6 +7,7 @@ import nl.thijsmolendijk.ibex.ast.Node;
 import nl.thijsmolendijk.ibex.ast.Statement;
 import nl.thijsmolendijk.ibex.ast.expr.*;
 import nl.thijsmolendijk.ibex.ast.stmt.*;
+import nl.thijsmolendijk.ibex.scoping.Scope;
 import nl.thijsmolendijk.ibex.type.FunctionType;
 import nl.thijsmolendijk.ibex.type.TupleType;
 import nl.thijsmolendijk.ibex.type.Type;
@@ -39,6 +40,7 @@ public class Parser {
      * Parses a list of nodes in between '{' and '}' such that '{' node* '}'.
      */
     private List<Node> parseBrace() {
+        sem.scope = new Scope(sem);
         List<Node> ret = new ArrayList<>();
 
         while (token.isNot(TokenType.RBRACE) && token.isNot(TokenType.EOF)) {
@@ -68,13 +70,17 @@ public class Parser {
 
                     SourceLocation eqLoc = consumeToken();
                     Expression right = parseExpr();
-                    if (right == null) return null;
+                    if (right == null) {
+                        sem.scope.end();
+                        return null;
+                    }
 
                     ret.add(new AssignExpr(ex, eqLoc, right));
                 }
             }
         }
 
+        sem.scope.end();
         return ret;
     }
 
@@ -132,10 +138,14 @@ public class Parser {
             funType = sem.handleFunctionType(funType, null, context.getUnit());
         }
 
+        sem.scope = new Scope(sem);
+
         FuncExpr ex = sem.handleFunc(start, (FunctionType) funType);
         if (token.is(TokenType.LBRACE)) {
             ex.setBody(parseBraceStmt());
         }
+
+        sem.scope.end();
 
         FnDecl decl = new FnDecl(name, funType, ex, start);
         sem.addToScope(decl);

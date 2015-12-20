@@ -2,14 +2,14 @@ package nl.thijsmolendijk.ibex;
 
 import nl.thijsmolendijk.ibex.ast.Expression;
 import nl.thijsmolendijk.ibex.ast.expr.*;
-import nl.thijsmolendijk.ibex.ast.stmt.ArgDecl;
-import nl.thijsmolendijk.ibex.ast.stmt.NamedDecl;
-import nl.thijsmolendijk.ibex.ast.stmt.TypeDecl;
-import nl.thijsmolendijk.ibex.ast.stmt.VarDecl;
+import nl.thijsmolendijk.ibex.ast.stmt.*;
 import nl.thijsmolendijk.ibex.parse.SourceLocation;
+import nl.thijsmolendijk.ibex.scoping.Scope;
+import nl.thijsmolendijk.ibex.scoping.ScopedHashMap;
 import nl.thijsmolendijk.ibex.type.*;
 import nl.thijsmolendijk.ibex.util.Pair;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -20,6 +20,13 @@ import java.util.List;
 public class Semantic {
     private ASTContext context;
 
+    public ScopedHashMap<Identifier, Pair<Integer, ValueDecl>> valueScope = new ScopedHashMap<>();
+    public ScopedHashMap<Identifier, Pair<Integer, TypeDecl>> typeScope = new ScopedHashMap<>();
+
+    private List<TypeDecl> unresolvedTypes = new ArrayList<>();
+
+    public Scope scope = new Scope(this);
+
     public Semantic(ASTContext context) {
         this.context = context;
     }
@@ -29,13 +36,17 @@ public class Semantic {
      * ======================================================== */
 
     public Expression handleIdentifier(SourceLocation loc, Identifier ident) {
-        //FIXME: Actually perform lookup.
-        return new UnresolvedRefExpr(loc, ident);
+        ValueDecl decl = lookupValue(ident);
+        if (decl == null) {
+            return new UnresolvedRefExpr(loc, ident);
+        }
+        return new DeclRefExpr(decl, loc);
     }
 
     public IntegerLiteralExpr handleInteger(SourceLocation loc, String val) {
-        //FIXME: Integer type
-        return new IntegerLiteralExpr(loc, val);
+        IntegerLiteralExpr ret = new IntegerLiteralExpr(loc, val);
+        ret.setType(context.getInt32());
+        return ret;
     }
 
     public TupleExpr handleTupleExpr(SourceLocation lbrace, List<Pair<Expression, Identifier>> elements, SourceLocation rbrace) {
@@ -51,13 +62,13 @@ public class Semantic {
     }
 
     public FuncExpr handleFunc(SourceLocation start, FunctionType funType) {
-        //FIXME: Scope.
         TupleType inArgs = (TupleType) funType.getIn();
         ArgDecl[] args = new ArgDecl[inArgs.size()];
 
         for (int i = 0; i < inArgs.size(); i++) {
             TupleType.TupleElement el = inArgs.getElement(i);
             args[i] = new ArgDecl(el.getName(), el.getType(), start);
+            addToScope(args[i]);
         }
 
         return new FuncExpr(funType, start, args, null);
@@ -68,8 +79,7 @@ public class Semantic {
      * ======================================================== */
 
     public Type handleTypeName(SourceLocation loc, Identifier name) {
-        //FIXME: Perform lookup
-        return new NameAliasType(new TypeDecl(name, loc, null));
+        return lookupType(name, loc).getAliasType();
     }
 
     public FunctionType handleFunctionType(Type in, SourceLocation arrowLocation, Type out) {
@@ -88,8 +98,34 @@ public class Semantic {
      *                      Decls and lookup
      * ======================================================== */
 
-    public void addToScope(NamedDecl decl) {
+    public ValueDecl lookupValue(Identifier name) {
+        Pair<Integer, ValueDecl> entry = valueScope.get(name);
+        if (entry == null) return null;
+        return entry.getRight();
+    }
 
+    public TypeDecl lookupType(Identifier name, SourceLocation loc) {
+        Pair<Integer, TypeDecl> entry = typeScope.get(name);
+        if (entry != null) {
+            return entry.getRight();
+        }
+
+        TypeDecl decl = new TypeDecl(name, loc, null);
+        unresolvedTypes.add(decl);
+        // We have not resolved this, so put it at top level.
+        // Otherwise, references to the same type in different scopes would create new empty decls.
+        typeScope.putInScope(0, name, new Pair<>(0, decl));
+
+        return decl;
+    }
+
+    public void addToScope(ValueDecl decl) {
+        Pair<Integer, ValueDecl> existing = valueScope.get(decl.getName());
+        if (existing != null && existing.getLeft() == scope.getDepth()) {
+            throw new RuntimeException("Redefinition of " + decl.getName().getValue());
+        }
+
+        valueScope.put(decl.getName(), new Pair<>(scope.getDepth(), decl));
     }
 
     public VarDecl handleVarDecl(SourceLocation loc, Identifier name, Type givenType, Expression init) {
@@ -100,7 +136,19 @@ public class Semantic {
     }
 
     public TypeDecl handleTypeDecl(SourceLocation loc, Identifier name, Type ty) {
-        //FIXME: Mark as resolved if needed.
-        return new TypeDecl(name, loc, ty);
+        Pair<Integer, TypeDecl> entry = typeScope.get(name);
+
+        if (entry == null || entry.getLeft() != scope.getDepth()) {
+            TypeDecl decl = new TypeDecl(name, loc, ty);
+            typeScope.put(name, new Pair<>(scope.getDepth(), decl));
+            return decl;
+        }
+
+        if (entry.getRight().getUnderlyingType() == null) {
+            entry.getRight().setUnderlyingType(ty);
+            return entry.getRight();
+        }
+
+        throw new RuntimeException("Redefinition of " + ty.getName() + " in same scope.");
     }
 }
