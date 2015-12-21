@@ -75,6 +75,8 @@ public class Parser {
                 case KW_FN:
                     ret.add(parseFnDecl());
                     break;
+                case KW_USE:
+                    ret.add(parseImportDecl());
                 default: {
                     Expression ex = parseExpr();
 
@@ -135,6 +137,24 @@ public class Parser {
         Type type = parseType();
 
         return sem.handleTypeDecl(loc, name, type);
+    }
+
+    /**
+     * @return the parsed import decl
+     */
+    public ImportDecl parseImportDecl() {
+        SourceLocation loc = consumeToken();
+
+        List<Pair<Identifier, SourceLocation>> path = new ArrayList<>();
+        SourceLocation firstLoc = token.getLocation();
+        path.add(new Pair<>(parseIdentifier(), firstLoc));
+
+        while (consumeIf(TokenType.DOT)) {
+            SourceLocation l = token.getLocation();
+            path.add(new Pair<>(parseIdentifier(), l));
+        }
+
+        return new ImportDecl(loc, path);
     }
 
     /**

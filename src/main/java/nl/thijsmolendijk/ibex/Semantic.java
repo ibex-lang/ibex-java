@@ -82,10 +82,12 @@ public class Semantic {
     public void handleEndOfUnit(TranslationUnit result, SourceLocation start, SourceLocation end, List<Node> contents) {
         result.setBody(new BraceStmt(start, end, contents.toArray(new Node[contents.size()])));
 
-        Iterator<TypeDecl> it = unresolvedTypes.iterator();
-        for (TypeDecl decl = it.next(); it.hasNext(); decl = it.next()) {
-            if (decl.getUnderlyingType() != null) {
-                it.remove();
+        if (!unresolvedTypes.isEmpty()) {
+            Iterator<TypeDecl> it = unresolvedTypes.iterator();
+            for (TypeDecl decl = it.next(); it.hasNext(); decl = it.next()) {
+                if (decl.getUnderlyingType() != null) {
+                    it.remove();
+                }
             }
         }
 

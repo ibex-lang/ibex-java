@@ -14,12 +14,12 @@ import java.lang.reflect.Method;
  *
  * Created by molenzwiebel on 19-12-15.
  */
-public class ASTWalker {
-    private TriFunction<Expression, WalkOrder, Object, Expression> exprFun;
-    private TriFunction<Statement, WalkOrder, Object, Statement> stmtFun;
-    private Object data;
+public class ASTWalker<T> {
+    private TriFunction<Expression, WalkOrder, T, Expression> exprFun;
+    private TriFunction<Statement, WalkOrder, T, Statement> stmtFun;
+    private T data;
 
-    public ASTWalker(TriFunction<Expression, WalkOrder, Object, Expression> exprFun, TriFunction<Statement, WalkOrder, Object, Statement> stmtFun, Object data) {
+    public ASTWalker(TriFunction<Expression, WalkOrder, T, Expression> exprFun, TriFunction<Statement, WalkOrder, T, Statement> stmtFun, T data) {
         this.exprFun = exprFun;
         this.stmtFun = stmtFun;
         this.data = data;
@@ -207,6 +207,8 @@ public class ASTWalker {
         try {
             Method m = getClass().getDeclaredMethod("visitExpr", e.getClass());
             return (Expression) m.invoke(this, e);
+        } catch (NoSuchMethodException ex) {
+            return e;
         } catch (Exception ex) {
             throw new RuntimeException(ex);
         }
@@ -216,6 +218,8 @@ public class ASTWalker {
         try {
             Method m = getClass().getDeclaredMethod("visitStmt", e.getClass());
             return (Statement) m.invoke(this, e);
+        } catch (NoSuchMethodException ex) {
+            return e;
         } catch (Exception ex) {
             throw new RuntimeException(ex);
         }

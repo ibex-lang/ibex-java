@@ -1,6 +1,7 @@
 package nl.thijsmolendijk.ibex;
 
 import nl.thijsmolendijk.ibex.ast.stmt.TranslationUnit;
+import nl.thijsmolendijk.ibex.binding.NameBinder;
 import nl.thijsmolendijk.ibex.parse.Parser;
 
 /**
@@ -8,8 +9,17 @@ import nl.thijsmolendijk.ibex.parse.Parser;
  */
 public class Main {
     public static void main(String... args) {
-        Parser p = new Parser("foo.en", "type Foo : (A, A) type Bar : (Foo)", new ASTContext());
+        ASTContext ctx = new ASTContext();
+
+        Parser p = new Parser("foo.en",
+                "type Int : () \n" +
+                "10 -> foo \n" +
+                "fn foo(a: Int) { }", ctx);
         TranslationUnit stmt = p.parseTranslationUnit();
+
+        NameBinder binder = new NameBinder(ctx);
+        binder.performBinding(stmt);
+
         System.out.println(stmt);
     }
 }
