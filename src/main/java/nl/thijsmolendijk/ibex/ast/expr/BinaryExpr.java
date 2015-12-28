@@ -35,6 +35,10 @@ public class BinaryExpr extends Expression {
         this.right = right;
     }
 
+    public Expression getFun() {
+        return fun;
+    }
+
     @Override
     public SourceLocation getLocation() {
         return left.getLocation();

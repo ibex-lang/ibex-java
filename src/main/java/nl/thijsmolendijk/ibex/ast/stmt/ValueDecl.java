@@ -25,4 +25,8 @@ public abstract class ValueDecl extends NamedDecl {
     public void setInit(Expression init) {
         this.init = init;
     }
+
+    public Type getType() {
+        return type;
+    }
 }
