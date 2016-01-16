@@ -45,6 +45,10 @@ enum class TokenType {
     // Any valid identifier, [A-Za-z_] [A-Za-z_0-9$-]*
     IDENTIFIER,
 
+    // 'true'
+    KW_TRUE,
+    // 'false'
+    KW_FALSE,
     // 'fn'
     KW_FN,
     // 'match'
@@ -53,18 +57,24 @@ enum class TokenType {
     KW_IF,
     // 'else'
     KW_ELSE,
-    // 'use'
-    KW_USE,
+    // 'import'
+    KW_IMPORT,
     // 'module'
     KW_MODULE,
-    // 'type'
-    KW_TYPE,
+    // 'typealias'
+    KW_TYPEALIAS,
     // 'as'
     KW_AS,
     // 'extern'
     KW_EXTERN,
+    // 'val'
+    KW_VAL,
+    // 'var'
+    KW_VAR,
     // 'let'
     KW_LET,
     // 'return'
-    KW_RETURN
+    KW_RETURN,
+    // 'for'
+    KW_FOR
 }

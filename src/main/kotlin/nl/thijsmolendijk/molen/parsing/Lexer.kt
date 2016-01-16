@@ -1,25 +1,34 @@
 package nl.thijsmolendijk.molen.parsing
 
 /**
+ * Main lexer.
+ *
  * Created by molenzwiebel on 09-01-16.
  */
 class Lexer(val filename: String, val source: String) {
     private final val KEYWORDS = mapOf(
+            "true" to TokenType.KW_TRUE,
+            "false" to TokenType.KW_FALSE,
             "fn" to TokenType.KW_FN,
             "match" to TokenType.KW_MATCH,
             "if" to TokenType.KW_IF,
             "else" to TokenType.KW_ELSE,
-            "use" to TokenType.KW_USE,
+            "import" to TokenType.KW_IMPORT,
             "module" to TokenType.KW_MODULE,
-            "type" to TokenType.KW_TYPE,
+            "typealias" to TokenType.KW_TYPEALIAS,
             "as" to TokenType.KW_AS,
             "extern" to TokenType.KW_EXTERN,
+            "var" to TokenType.KW_VAR,
+            "val" to TokenType.KW_VAL,
             "let" to TokenType.KW_LET,
-            "return" to TokenType.KW_RETURN
+            "return" to TokenType.KW_RETURN,
+            "for" to TokenType.KW_FOR
     )
 
     private var offset: Int = 0
     private var nextToken: Token = lexImpl()
+
+    public fun peek() = nextToken
 
     public fun lex(): Token {
         val res = nextToken
@@ -39,10 +48,10 @@ class Lexer(val filename: String, val source: String) {
 
             '(' -> newToken(TokenType.LPAREN, start)
             ')' -> newToken(TokenType.RPAREN, start)
-            '{' -> newToken(TokenType.LBRACKET, start)
-            '}' -> newToken(TokenType.RBRACKET, start)
-            '[' -> newToken(TokenType.LBRACE, start)
-            ']' -> newToken(TokenType.RBRACE, start)
+            '{' -> newToken(TokenType.LBRACE, start)
+            '}' -> newToken(TokenType.RBRACE, start)
+            '[' -> newToken(TokenType.LBRACKET, start)
+            ']' -> newToken(TokenType.RBRACKET, start)
             ',' -> newToken(TokenType.COMMA, start)
             '.' -> newToken(TokenType.COLON, start)
 

@@ -147,7 +147,7 @@
 
 **tuple-literal-element**:
 
-    tuple-literal-element ::= (<ident> ':')? <expression>
+    tuple-literal-element ::= ('.' <ident> '=')? <expression>
 
 **int-literal**:
 
